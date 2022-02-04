@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: app
+spec:
+  volumeClaimTemplates:
+    - metadata:
+        name: uploads
+      spec:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: gp2
+
+  template:
+    spec:
+      initContainers:
+        - name: fix-the-volume-permission
+          
+          command:
+            - sh
+            - -c
+            - 'chown -R 33:33 /var/www/html/wp-content/uploads'
+          
+          image: busybox
+
+          securityContext:
+            privileged: true
+
+          volumeMounts:
+            - mountPath: /var/www/html/wp-content/uploads
+              name: app
+
+      containers:
+        - name: app
+          volumeMounts:
+            - mountPath: /var/www/html/wp-content/uploads
+              name: app

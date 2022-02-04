@@ -1,0 +1,42 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - github.com/w3w-internal/infrastructure-manifests//archetypes/application-web-public?ref=HEAD&depth=1
+  - statefulset.yaml
+  - pdb.yaml
+
+commonLabels:
+  app.kubernetes.io/name: cms
+
+namePrefix: cms-
+
+configMapGenerator:
+  - name: app-config
+    files:
+      - uploads.ini
+
+secretGenerator:
+  - name: app-env
+    behavior: create
+    literals: []
+
+replacements:
+  - source:
+      kind: StatefulSet
+      fieldPath: metadata.labels.[app.kubernetes.io/name]
+    targets:
+      - select:
+          kind: Service
+        fieldPaths:
+          - spec.externalName
+
+patches:
+  - target:
+      kind: Deployment
+      name: app
+    path: deployment.delete.yaml
+  - target:
+      kind: HorizontalPodAutoscaler
+      name: app
+    path: hpa.merge.yaml

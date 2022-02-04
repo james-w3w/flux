@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+replacements:
+  - source:
+      kind: StatefulSet
+      fieldPath: metadata.labels.[app.kubernetes.io/name]
+    targets:
+      - select:
+          kind: StatefulSet
+        fieldPaths:
+          - spec.volumeClaimTemplates.0.metadata.name
+          - spec.template.spec.containers.0.volumeMounts.0.name
+          - spec.template.spec.initContainers.0.volumeMounts.0.name
+
+patches:
+  - target:
+      kind: StatefulSet
+      name: app
+    path: statefulset.merge.yaml
+  - target:
+      kind: PodDisruptionBudget
+      name: app
+    path: pdb.merge.yaml

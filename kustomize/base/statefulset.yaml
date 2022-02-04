@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: app
+spec:
+  selector: {}
+  serviceName: app
+  updateStrategy:
+    type: RollingUpdate
+  
+  template:
+    metadata: {}
+    spec:
+      volumes:
+        - name: config
+          configMap:
+            name: app-config
+
+      containers:
+        - name: app
+          image: what3words-corporate-cms
+          imagePullPolicy: Always
+
+          ports:
+            - name: http
+              containerPort: 80
+
+          envFrom:
+            - configMapRef:
+                name: app-env
+            - secretRef:
+                name: app-env
+
+          volumeMounts:
+            - mountPath: /usr/local/etc/php/conf.d/uploads.ini
+              name: config
+              subPath: uploads.ini
+
+          livenessProbe:
+            httpGet:
+              path: /wp-json
+              port: http
+              scheme: HTTP
+            failureThreshold: 5
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /wp-json
+              port: http
+              scheme: HTTP
+            failureThreshold: 5
+            initialDelaySeconds: 10
+            timeoutSeconds: 10
+
+          resources:
+            limits:
+              cpu: 200m
+              memory: 300M
+            requests:
+              cpu: 200m
+              memory: 300M
